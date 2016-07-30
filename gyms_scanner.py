@@ -1,6 +1,6 @@
 # coding: utf-8
 import json
-from collections import Counter, namedtuple
+from collections import Counter
 from datetime import datetime
 from pprint import pprint
 from time import sleep
@@ -10,16 +10,8 @@ import csv
 from peewee import InsertQuery
 
 import models
-from models import create_tables, init_database
-from utils import setup_logging, setup_api, timestamp_to_strftime
-
-TEAMS = {
-    0: 'Neutral',
-    1: 'Mystic',
-    2: 'Valor',
-    3: 'Instint'
-}
-
+from models import create_tables
+from utils import setup_logging, setup_api
 
 def read_gyms_from_csv(csv_file):
     gyms = []
@@ -131,14 +123,14 @@ def parse_and_insert_to_database(gym_details):
 
 def print_gyms_by_team():
     gyms = models.Gym.select()
-    team_counter = Counter([gym.team_id for gym in gyms])
+    team_counter = Counter([gym.team for gym in gyms])
     total_gyms = sum(team_counter.values())
     print
     print "Gimnasios por equipos"
     print "-" * 30
-    print "Número de gimnasios: {}".format(total_gyms)
+    print "Número de gimnasios: {}".format(models.Gym.select().count())
     for team, gyms_owned in team_counter.iteritems():
-        print "{:10} {:5}  ({:.1f}%)".format(TEAMS[team], gyms_owned, gyms_owned / float(total_gyms) * 100)
+        print "{:10} {:5}  ({:.1f}%)".format(team, gyms_owned, gyms_owned / float(total_gyms) * 100)
 
 
 def print_top_trainers():
@@ -175,11 +167,11 @@ def print_gyms_details():
 
 
 def main():
-    gyms_dict = read_gyms_from_csv('gyms_santiago.csv')
-    gym_details = get_data_from_server(gyms_dict)
-    save_to_json(gym_details)
-
-    # gym_details = read_data_from_json('gym_details.json')
+    # gyms_dict = read_gyms_from_csv('gyms_santiago.csv')
+    # gym_details = get_data_from_server(gyms_dict)
+    # save_to_json(gym_details)
+    #
+    gym_details = read_data_from_json('gym_details.json')
 
     parse_and_insert_to_database(gym_details)
 

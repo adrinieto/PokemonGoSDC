@@ -3,10 +3,7 @@ from datetime import datetime
 
 from pgoapi import pgoapi
 
-
-SERVICE_PROVIDER = "google"
-USERNAME = "YOUR_USERNAME"
-PASSWORD = "YOUR_PASSWORD"
+from config import SERVICE_PROVIDER, USERNAME, PASSWORD
 
 
 def setup_logging():
@@ -33,4 +30,3 @@ def setup_api(position):
 
 def timestamp_to_strftime(timestamp):
     return datetime.fromtimestamp(int(timestamp) / 1000).strftime('%Y-%m-%d %H:%M:%S')
-

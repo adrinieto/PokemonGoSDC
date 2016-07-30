@@ -2,11 +2,12 @@
 import logging
 
 from peewee import Model, SqliteDatabase, CharField, IntegerField, BooleanField, DoubleField, DateTimeField, \
-    ForeignKeyField, fn, SQL
+    ForeignKeyField, fn
+
+from config import DATABASE
 
 log = logging.getLogger(__name__)
 
-DATABASE = "database.sqlite"
 db = None
 
 
@@ -25,7 +26,7 @@ def create_tables():
     init_database()
     db.connect()
     tables = [Trainer, Pokemon, Gym, GymMember]
-    db.drop_tables(tables)
+    # db.drop_tables(tables)
     db.create_tables(tables, safe=True)
     db.close()
 
@@ -93,9 +94,13 @@ class Gym(BaseModel):
     def level(self):
         points_per_level = [2000, 4000, 8000, 12000, 16000, 20000, 30000, 40000, 50000]
         level = 1
-        while self.gym_points >= points_per_level[level -1]:
+        while self.gym_points >= points_per_level[level - 1]:
             level += 1
         return level
+
+    @classmethod
+    def get_by_teams(cls):
+        gyms = Gym.select()
 
     def __repr__(self):
         return "Gym(id={}, name={}, team_id={}, gym_points={}, last_modified={}, members_count={}))".format(

@@ -1,0 +1,5 @@
+SERVICE_PROVIDER = "google"
+USERNAME = "YOUR_EMAIL"
+PASSWORD = "YOUR_PASSWORD"
+
+DATABASE = "database.sqlite"
