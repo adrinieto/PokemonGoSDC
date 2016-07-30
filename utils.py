@@ -17,6 +17,8 @@ def setup_logging():
     # log level for internal pgoapi class
     logging.getLogger("rpc_api").setLevel(logging.INFO)
 
+    logging.getLogger("peewee").setLevel(logging.INFO)
+
 
 def setup_api(position):
     api = pgoapi.PGoApi()

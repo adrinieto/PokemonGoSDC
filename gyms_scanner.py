@@ -1,17 +1,18 @@
 # coding: utf-8
+import csv
 import json
+import logging
 from collections import Counter
 from datetime import datetime
-from pprint import pprint
 from time import sleep
-
-import csv
 
 from peewee import InsertQuery
 
 import models
 from models import create_tables
 from utils import setup_logging, setup_api
+
+log = logging.getLogger(__name__)
 
 def read_gyms_from_csv(csv_file):
     gyms = []
@@ -66,16 +67,21 @@ def parse_and_insert_to_database(gym_details):
     gyms = {}
     trainers = {}
     pokemons = {}
-    gym_members = []
+    gym_members = {}
 
     for gym_detail in gym_details:
+        if 'gym_state' not in gym_detail:  # Sometimes the request fail and no data is returned. status code = 2
+            log.error("Error requesting gym details. Response: {}".format(gym_detail))
+            continue
+
         gym_data = gym_detail['gym_state']['fort_data']
         gym_id = gym_data['id']
+        team_id = gym_data.get('owned_by_team', models.Gym.UNCONTESTED)
         gyms[gym_id] = {
             'id': gym_id,
             'name': gym_detail['name'],
             'description': gym_detail.get('description', ''),
-            'team_id': gym_data.get('owned_by_team', models.Gym.UNCONTESTED),
+            'team_id': team_id,
             'guard_pokemon_id': gym_data.get('guard_pokemon_id', 0),
             'gym_points': gym_data.get('gym_points', 0),
             'is_in_battle': gym_data.get('is_in_battle', False),
@@ -89,6 +95,7 @@ def parse_and_insert_to_database(gym_details):
 
         memberships = gym_detail['gym_state'].get('memberships', [])
 
+        members = []
         for member in memberships:
             pokemon_data = member['pokemon_data']
             trainer_data = member['trainer_public_profile']
@@ -97,6 +104,7 @@ def parse_and_insert_to_database(gym_details):
             trainers[trainer_name] = {
                 'name': trainer_name,
                 'level': trainer_data['level'],
+                'team_id': team_id,
                 'last_checked': now
             }
 
@@ -109,16 +117,21 @@ def parse_and_insert_to_database(gym_details):
                 'last_checked': now
             }
 
-            gym_members.append({
+            members.append({
                 'trainer': trainer_name,
                 'gym': gym_id,
-                'pokemon': pokemon_id
+                'pokemon': pokemon_id,
+                'added_date': now
             })
 
-    InsertQuery(models.Gym, rows=gyms.values()).upsert().execute()
+        gym_members[gym_id] = members
+
+    models.update_gyms(gyms, gym_members)
+
     InsertQuery(models.Trainer, rows=trainers.values()).upsert().execute()
+    log.info("Upserted {} trainers".format(len(trainers)))
     InsertQuery(models.Pokemon, rows=pokemons.values()).upsert().execute()
-    InsertQuery(models.GymMember, rows=gym_members).upsert().execute()
+    log.info("Upserted {} pokemons".format(len(pokemons)))
 
 
 def print_gyms_by_team():
@@ -138,9 +151,9 @@ def print_top_trainers():
     print
     print "TOP 10 trainers (by level)"
     print "-" * 30
-    print "{:20} {:7}".format("TRAINER", "LEVEL")
+    print "{:20} {:7} {:7}".format("TRAINER", "LEVEL", "TEAM")
     for trainer in top_trainers:
-        print "{:20} {:<7}".format(trainer.name, trainer.level)
+        print "{:20} {:<7} {:7}".format(trainer.name, trainer.level, trainer.team)
 
 
 def print_top_gyms_owned():
@@ -148,10 +161,10 @@ def print_top_gyms_owned():
     print
     print "Gimnasios por entrenador"
     print "-" * 30
-    print "{:20} {:7} {:5}".format("TRAINER", "LEVEL", "GYMS OWNED")
+    print "{:20} {:7} {:7} {:5}".format("TRAINER", "LEVEL", "TEAM", "GYMS OWNED")
     for trainer in top_gyms_owned:
-        print "{:20} {:<7} {:5}".format(
-            trainer.name, trainer.level, len(trainer.gyms_membership))
+        print "{:20} {:<7} {:7} {:5}".format(
+            trainer.name, trainer.level, trainer.team, len(trainer.gyms_membership))
 
 
 def print_gyms_details():
@@ -167,10 +180,10 @@ def print_gyms_details():
 
 
 def main():
-    # gyms_dict = read_gyms_from_csv('gyms_santiago.csv')
-    # gym_details = get_data_from_server(gyms_dict)
-    # save_to_json(gym_details)
-    #
+    gyms_dict = read_gyms_from_csv('gyms_santiago.csv')
+    gym_details = get_data_from_server(gyms_dict)
+    save_to_json(gym_details)
+
     gym_details = read_data_from_json('gym_details.json')
 
     parse_and_insert_to_database(gym_details)
