@@ -63,7 +63,7 @@ def get_data_from_server(gyms):
             response_dict = api.get_gym_details(gym_id=gym_id)
         except TypeError, e:
             log.error("Error getting data from server: ", e)
-        if 'GET_GYM_DETAILS' not in response_dict["responses"]:
+        if 'responses' not in response_dict or 'GET_GYM_DETAILS' not in response_dict["responses"]:
             log.warn("No GET_GYM_DETAILS in response. Skipping cell...")
             continue
         gym_detail = response_dict["responses"]["GET_GYM_DETAILS"]
