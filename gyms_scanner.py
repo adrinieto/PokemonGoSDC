@@ -14,6 +14,11 @@ from utils import setup_logging, setup_api
 
 log = logging.getLogger(__name__)
 
+
+class LoginFailedException(Exception):
+    pass
+
+
 def read_gyms_from_csv(csv_file):
     gyms = []
 
@@ -44,6 +49,8 @@ def get_data_from_server(gyms):
     position = (42.878529, -8.544476, 0)  # Catedral
     api = setup_api(position)
 
+    if api is None:
+        raise LoginFailedException
     gym_details = []
 
     for gym in gyms:
@@ -134,64 +141,73 @@ def parse_and_insert_to_database(gym_details):
     log.info("Upserted {} pokemons".format(len(pokemons)))
 
 
-def print_gyms_by_team():
+def gyms_by_team():
     gyms = models.Gym.select()
     team_counter = Counter([gym.team for gym in gyms])
     total_gyms = sum(team_counter.values())
-    print
-    print "Gimnasios por equipos"
-    print "-" * 30
-    print "Número de gimnasios: {}".format(models.Gym.select().count())
+    response = ""
+    response += "Gimnasios por equipos\n"
+    response += "-" * 30 +"\n"
+    response += "Número de gimnasios: {}\n".format(models.Gym.select().count())
     for team, gyms_owned in team_counter.iteritems():
-        print "{:10} {:5}  ({:.1f}%)".format(team, gyms_owned, gyms_owned / float(total_gyms) * 100)
+        response += "{:10} {:5}  ({:.1f}%)\n".format(team, gyms_owned, gyms_owned / float(total_gyms) * 100)
+    return response
 
 
-def print_top_trainers():
+def top_trainers():
     top_trainers = models.Trainer.sorted_by_level()[:10]
-    print
-    print "TOP 10 trainers (by level)"
-    print "-" * 30
-    print "{:20} {:7} {:7}".format("TRAINER", "LEVEL", "TEAM")
+    response = ""
+    response += "TOP 10 trainers (by level)\n"
+    response += "-" * 30 + "\n"
+    response += "{:20} {:7} {:7}\n".format("TRAINER", "LEVEL", "TEAM")
     for trainer in top_trainers:
-        print "{:20} {:<7} {:7}".format(trainer.name, trainer.level, trainer.team)
+        response += "{:20} {:<7} {:7}\n".format(trainer.name, trainer.level, trainer.team)
+    return response
 
 
-def print_top_gyms_owned():
+def top_gyms_owned():
     top_gyms_owned = models.Trainer.top_gyms_owned()[:10]
-    print
-    print "Gimnasios por entrenador"
-    print "-" * 30
-    print "{:20} {:7} {:7} {:5}".format("TRAINER", "LEVEL", "TEAM", "GYMS OWNED")
+    response = ""
+    response += "Gimnasios por entrenador\n"
+    response += "-" * 30 + "\n"
+    response += "{:>2}  {:12} {:2} {:<5} \n".format("#", "TRAINER", "LEVEL", "TEAM")
     for trainer in top_gyms_owned:
-        print "{:20} {:<7} {:7} {:5}".format(
-            trainer.name, trainer.level, trainer.team, len(trainer.gyms_membership))
+        response += "{:2}  {:15} {:2} {:7} \n".format(
+            len(trainer.gyms_membership), trainer.name, trainer.level, trainer.team)
+    return response
 
 
-def print_gyms_details():
-    print
+def gyms_details():
+    response = ""
     for gym in models.Gym.select():
-        print "-", gym.name
-        print "  Controlled by: {}".format(gym.team)
-        print "  {} points (level {})".format(gym.gym_points, gym.level)
-        print "  {} trainers:".format(len(gym.members))
+        response += "- {}\n".format(gym.name.encode('utf-8'))
+        response += "  Controlled by: \n".format(gym.team)
+        response += "  {} points (level {})\n".format(gym.gym_points, gym.level)
+        response += "  {} trainers:\n".format(len(gym.members))
         for member in gym.members:
-            print "    - {:4} CP ({:15} level {:2})".format(
+            response += "    - {:4} CP ({:15} level {:2})\n".format(
                 member.pokemon.cp, member.trainer.name, member.trainer.level)
+    return response
 
 
 def main():
-    gyms_dict = read_gyms_from_csv('gyms_santiago.csv')
-    gym_details = get_data_from_server(gyms_dict)
-    save_to_json(gym_details)
+    while True:
+        try:
+            gyms_dict = read_gyms_from_csv('gyms_santiago.csv')
+            gym_details = get_data_from_server(gyms_dict)
+            save_to_json(gym_details)
 
-    gym_details = read_data_from_json('gym_details.json')
+            gym_details = read_data_from_json('gym_details.json')
 
-    parse_and_insert_to_database(gym_details)
+            parse_and_insert_to_database(gym_details)
 
-    print_gyms_details()
-    print_gyms_by_team()
-    print_top_trainers()
-    print_top_gyms_owned()
+            # print gyms_details()
+            print gyms_by_team()
+            print top_trainers()
+            print top_gyms_owned()
+        except LoginFailedException:
+            log.error("Login failed. Sleeping...")
+        sleep(50)
 
 
 if __name__ == '__main__':

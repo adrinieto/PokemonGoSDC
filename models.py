@@ -31,7 +31,7 @@ def create_tables():
     db.close()
 
 
-TEAMS = ['Uncontested', 'Mystic', 'Valor', 'Instint']
+TEAMS = ['Neutral', 'Mystic', 'Valor', 'Instint']
 
 
 class BaseModel(Model):
