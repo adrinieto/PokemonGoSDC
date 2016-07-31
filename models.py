@@ -31,7 +31,7 @@ def create_tables():
     db.close()
 
 
-TEAMS = ['Neutral', 'Mystic', 'Valor', 'Instint']
+TEAMS = ['Neutral', 'Mystic', 'Valor', 'Instinct']
 
 
 class BaseModel(Model):
@@ -134,9 +134,10 @@ def update_gyms(gyms, gym_members_dict):
     for gym_id in gyms:
         try:
             gym = Gym.get(Gym.id == gym_id)
-            if gym.last_modified != gyms[gym.id]['last_modified']:
+            if gym.last_modified != gyms[gym_id]['last_modified']:
                 gym_members_to_update.append(gym_id)
         except DoesNotExist:
+            log.debug("Adding new gym: {}".format(gyms[gym_id]['name']))
             gym_members_to_update.append(gym_id)
 
     InsertQuery(Gym, rows=gyms.values()).upsert().execute()

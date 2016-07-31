@@ -59,7 +59,13 @@ def get_data_from_server(gyms):
         gym_id = gym['gym_id']
 
         api.set_position(gym_lat, gym_lng, 0)
-        response_dict = api.get_gym_details(gym_id=gym_id)
+        try:
+            response_dict = api.get_gym_details(gym_id=gym_id)
+        except TypeError, e:
+            log.error("Error getting data from server: ", e)
+        if 'GET_GYM_DETAILS' not in response_dict["responses"]:
+            log.warn("No GET_GYM_DETAILS in response. Skipping cell...")
+            continue
         gym_detail = response_dict["responses"]["GET_GYM_DETAILS"]
         gym_details.append(gym_detail)
 
@@ -149,7 +155,9 @@ def gyms_by_team():
     response += "Gimnasios por equipos\n"
     response += "-" * 30 +"\n"
     response += "Número de gimnasios: {}\n".format(models.Gym.select().count())
-    for team, gyms_owned in team_counter.iteritems():
+    teams = team_counter.items()
+    teams = sorted(teams, key=lambda x: x[1], reverse=True)
+    for team, gyms_owned in teams:
         response += "{:10} {:5}  ({:.1f}%)\n".format(team, gyms_owned, gyms_owned / float(total_gyms) * 100)
     return response
 
@@ -181,7 +189,7 @@ def gyms_details():
     response = ""
     for gym in models.Gym.select():
         response += "- {}\n".format(gym.name.encode('utf-8'))
-        response += "  Controlled by: \n".format(gym.team)
+        response += "  Controlled by: {}\n".format(gym.team)
         response += "  {} points (level {})\n".format(gym.gym_points, gym.level)
         response += "  {} trainers:\n".format(len(gym.members))
         for member in gym.members:
@@ -201,12 +209,13 @@ def main():
 
             parse_and_insert_to_database(gym_details)
 
-            # print gyms_details()
+            print gyms_details()
             print gyms_by_team()
-            print top_trainers()
+            # print top_trainers()
             print top_gyms_owned()
         except LoginFailedException:
-            log.error("Login failed. Sleeping...")
+            log.error("Login failed")
+        log.debug("Sleeping...")
         sleep(50)
 
 
