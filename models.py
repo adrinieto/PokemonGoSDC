@@ -259,8 +259,7 @@ def check_gym_changes(gym, new_gym_dict, new_gym_members):
             'team_id': new_team_id
         })
 
-    if (gym.team_id != new_team_id or len(gym.members) != len(new_gym_members))\
-            and len(new_gym_members) > 0:
+    if gym.team_id != new_team_id or len(gym.members) != len(new_gym_members):
         old_members = set([gym_member.trainer.name for gym_member in list(gym.members)])
         new_members = set([member['trainer'] for member in new_gym_members])
         new_members_in_gym = list(new_members - old_members)
