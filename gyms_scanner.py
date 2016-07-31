@@ -47,7 +47,11 @@ def read_data_from_json(path):
 def get_data_from_server(gyms):
     setup_logging()
     position = (42.878529, -8.544476, 0)  # Catedral
-    api = setup_api(position)
+    try:
+        api = setup_api(position)
+    except TypeError, e:
+        log.error("Error setting up api: " + e)
+        raise LoginFailedException
 
     if api is None:
         raise LoginFailedException
