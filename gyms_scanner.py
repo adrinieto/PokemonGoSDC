@@ -9,6 +9,7 @@ from time import sleep
 from peewee import InsertQuery
 
 import models
+from config import SCAN_DELAY, GYM_SCAN_DELAY
 from models import create_tables
 from utils import setup_logging, setup_api
 
@@ -74,7 +75,7 @@ def get_data_from_server(gyms):
         gym_detail = response_dict["responses"]["GET_GYM_DETAILS"]
         gym_details.append(gym_detail)
 
-        sleep(0.2)
+        sleep(GYM_SCAN_DELAY)
     return gym_details
 
 
@@ -221,7 +222,7 @@ def main():
         except LoginFailedException:
             log.error("Login failed")
         log.debug("Sleeping...")
-        sleep(50)
+        sleep(SCAN_DELAY)
 
 
 if __name__ == '__main__':
