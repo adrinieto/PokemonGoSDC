@@ -162,7 +162,8 @@ def update_gyms(gyms, gym_members_dict):
             log.debug("Adding new gym: {}".format(gyms[gym_id]['name']))
             gym_members_to_update.append(gym_id)
 
-    InsertQuery(Gym, rows=gyms.values()).upsert().execute()
+    if gyms:
+        InsertQuery(Gym, rows=gyms.values()).upsert().execute()
     if actions:
         InsertQuery(GymLog, rows=actions).upsert().execute()
 

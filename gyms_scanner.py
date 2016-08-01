@@ -7,6 +7,7 @@ from datetime import datetime
 from time import sleep
 
 from peewee import InsertQuery
+from pgoapi.exceptions import ServerSideRequestThrottlingException
 
 import models
 from config import SCAN_DELAY, GYM_SCAN_DELAY
@@ -219,8 +220,8 @@ def main():
             print gyms_by_team()
             # print top_trainers()
             print top_gyms_owned()
-        except LoginFailedException:
-            log.error("Login failed")
+        except (LoginFailedException, ServerSideRequestThrottlingException) as e:
+            log.error("Login failed: " + e)
         log.debug("Sleeping...")
         sleep(SCAN_DELAY)
 
