@@ -64,10 +64,10 @@ def top_trainers(message):
     response = ""
     response += "TOP 10 entrenadores (por nivel)\n"
     response += "-" * 25 + "\n"
-    response += "{:6} {:20}\n".format("NIVEL", "ENTRENADOR")
+    response += "{:5} {:15}\n".format("NIVEL", "ENTRENADOR")
     for trainer in top_trainers:
         team_emoji = TEAM_EMOJI[trainer.team_id].encode('utf-8')
-        response += "{:<6} {}{:20} \n".format(trainer.level, team_emoji, trainer.name)
+        response += "{:^5} {}{:16} \n".format(trainer.level, team_emoji, trainer.name)
     response += "Fecha: {}".format(updated_time.strftime('%H:%M %d/%m/%Y'))
 
     bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
