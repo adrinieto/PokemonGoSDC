@@ -8,7 +8,7 @@ import models
 from config import BOT_API_TOKEN
 
 log = logging.getLogger(__name__)
-logging.basicConfig(format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
 logging.getLogger(__name__).setLevel(logging.DEBUG)
 
 GRAY_CIRCLE = u'\u26aa\ufe0f'
@@ -37,19 +37,21 @@ Tengo información interesante sobre el estado de los gimnasios y los entrenador
 @bot.message_handler(commands=['equipos'])
 def gyms_by_team(message):
     log.debug("/equipos " + str(message.chat.__dict__))
+    updated_time = list(models.Gym.select().order_by(models.Gym.last_checked.desc()).limit(1))[0].last_checked
     gyms = models.Gym.select()
     team_counter = Counter([gym.team_id for gym in gyms])
     total_gyms = sum(team_counter.values())
     response = ""
     response += "Gimnasios por equipos\n"
-    response += "-" * 30 + "\n"
+    response += "-" * 25 + "\n"
     response += "Total de gimnasios: {}\n".format(models.Gym.select().count())
     teams = team_counter.items()
     teams = sorted(teams, key=lambda x: x[1], reverse=True)
     for team_id, gyms_owned in teams:
         team_emoji = TEAM_EMOJI[team_id].encode('utf-8')
-        response += "{}{:10} {:5}  ({:.1f}%)\n".format(team_emoji, models.TEAMS[team_id], gyms_owned,
+        response += "{}{:8} {:5}  ({:.1f}%)\n".format(team_emoji, models.TEAMS[team_id], gyms_owned,
                                                        gyms_owned / float(total_gyms) * 100)
+    response += "Fecha: {}".format(updated_time.strftime('%H:%M %d/%m/%Y'))
 
     bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
 
@@ -57,14 +59,16 @@ def gyms_by_team(message):
 @bot.message_handler(commands=['top_entrenadores'])
 def top_trainers(message):
     log.debug("/top_entrenadores " + str(message.chat.__dict__))
+    updated_time = list(models.Trainer.select().order_by(models.Trainer.last_checked.desc()).limit(1))[0].last_checked
     top_trainers = models.Trainer.sorted_by_level()[:10]
     response = ""
     response += "TOP 10 entrenadores (por nivel)\n"
-    response += "-" * 30 + "\n"
-    response += "{:20} {:7}\n".format("ENTRENADOR", "NIVEL")
+    response += "-" * 25 + "\n"
+    response += "{:6} {:20}\n".format("NIVEL", "ENTRENADOR")
     for trainer in top_trainers:
         team_emoji = TEAM_EMOJI[trainer.team_id].encode('utf-8')
-        response += "{}{:20} {:<7}\n".format(team_emoji, trainer.name, trainer.level)
+        response += "{:<6} {}{:20} \n".format(trainer.level, team_emoji, trainer.name)
+    response += "Fecha: {}".format(updated_time.strftime('%H:%M %d/%m/%Y'))
 
     bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
 
@@ -72,15 +76,17 @@ def top_trainers(message):
 @bot.message_handler(commands=['top_gimnasios'])
 def gyms_per_trainer(message):
     log.debug("/top_gimnasios " + str(message.chat.__dict__))
+    updated_time = list(models.Gym.select().order_by(models.Gym.last_checked.desc()).limit(1))[0].last_checked
     top_gyms_owned = models.Trainer.top_gyms_owned()[:10]
     response = ""
     response += "Gimnasios por entrenador\n"
-    response += "-" * 30 + "\n"
-    response += "{:>2}  {:16} {:2}\n".format("#", "ENTRENADOR", "NIVEL")
+    response += "-" * 25 + "\n"
+    response += "{:>2} {:16} {:2}\n".format("#", "ENTRENADOR", "NIVEL")
     for trainer in top_gyms_owned:
         team_emoji = TEAM_EMOJI[trainer.team_id].encode('utf-8')
-        response += "{:2}  {}{:15} {:2}\n".format(
+        response += "{:2} {}{:15} {:2}\n".format(
             len(trainer.gyms_membership), team_emoji, trainer.name, trainer.level)
+    response += "Fecha: {}".format(updated_time.strftime('%H:%M %d/%m/%Y'))
 
     bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
 

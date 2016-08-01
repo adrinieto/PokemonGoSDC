@@ -108,7 +108,7 @@ def parse_and_insert_to_database(gym_details):
             'enabled': gym_data['enabled'],
             'latitude': gym_data['latitude'],
             'longitude': gym_data['longitude'],
-            'last_modified': datetime.utcfromtimestamp(
+            'last_modified': datetime.utcfromtimestamp( # todo Warning UTC
                 gym_data['last_modified_timestamp_ms'] / 1000.0),
             'last_checked': now,
         }
