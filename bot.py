@@ -17,7 +17,19 @@ RED_HEART = u'\u2764\ufe0f'
 YELLOW_HEART = u'\U0001f49b'
 TEAM_EMOJI = [GRAY_CIRCLE, BLUE_HEART, RED_HEART, YELLOW_HEART]
 
+CHEATERS_FILE = "cheaters.txt"
+CHEATERS = set()
+
 bot = telebot.TeleBot(BOT_API_TOKEN)
+
+
+def load_cheaters(txt_file):
+    global CHEATERS
+    try:
+        with open(txt_file) as fp:
+            CHEATERS = set([x.strip() for x in fp.readlines()])
+    except IOError:
+        pass
 
 
 def prepare_text(text):
@@ -60,12 +72,31 @@ def gyms_by_team(message):
 def top_trainers(message):
     log.debug("/top_entrenadores " + str(message.chat.__dict__))
     updated_time = list(models.Trainer.select().order_by(models.Trainer.last_checked.desc()).limit(1))[0].last_checked
-    top_trainers = models.Trainer.sorted_by_level()[:10]
+    top_trainers = models.Trainer.sorted_by_level()
+    top_trainers_withouth_cheaters = [trainer for trainer in top_trainers if trainer.name not in CHEATERS]
     response = ""
-    response += "TOP 10 entrenadores (por nivel)\n"
+    response += "TOP 15 entrenadores (por nivel)\n"
     response += "-" * 25 + "\n"
     response += "{:5} {:15}\n".format("NIVEL", "ENTRENADOR")
-    for trainer in top_trainers:
+    for trainer in top_trainers_withouth_cheaters[:15]:
+        team_emoji = TEAM_EMOJI[trainer.team_id].encode('utf-8')
+        response += "{:^5} {}{:16} \n".format(trainer.level, team_emoji, trainer.name)
+    response += "Fecha: {}".format(updated_time.strftime('%H:%M %d/%m/%Y'))
+
+    bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
+
+
+@bot.message_handler(commands=['lista_chetos'])
+def top_trainers(message):
+    log.debug("/lista_chetos " + str(message.chat.__dict__))
+    updated_time = list(models.Trainer.select().order_by(models.Trainer.last_checked.desc()).limit(1))[0].last_checked
+    top_trainers = models.Trainer.sorted_by_level()
+    top_cheaters = [trainer for trainer in top_trainers if trainer.name in CHEATERS]
+    response = ""
+    response += "TOP 10 chetos (por nivel)\n"
+    response += "-" * 25 + "\n"
+    response += "{:5} {:15}\n".format("NIVEL", "ENTRENADOR")
+    for trainer in top_cheaters[:10]:
         team_emoji = TEAM_EMOJI[trainer.team_id].encode('utf-8')
         response += "{:^5} {}{:16} \n".format(trainer.level, team_emoji, trainer.name)
     response += "Fecha: {}".format(updated_time.strftime('%H:%M %d/%m/%Y'))
@@ -79,13 +110,14 @@ def gyms_per_trainer(message):
     updated_time = list(models.Gym.select().order_by(models.Gym.last_checked.desc()).limit(1))[0].last_checked
     top_gyms_owned = models.Trainer.top_gyms_owned()[:10]
     response = ""
-    response += "Gimnasios por entrenador\n"
+    response += "TOP 10 gimnasios por entrenador\n"
     response += "-" * 25 + "\n"
     response += "{:>2} {:16} {:2}\n".format("#", "ENTRENADOR", "NIVEL")
     for trainer in top_gyms_owned:
+        cheater_flag = "*" if trainer.name in CHEATERS else ""
         team_emoji = TEAM_EMOJI[trainer.team_id].encode('utf-8')
         response += "{:2} {}{:15} {:2}\n".format(
-            len(trainer.gyms_membership), team_emoji, trainer.name, trainer.level)
+            len(trainer.gyms_membership), team_emoji, cheater_flag + trainer.name, trainer.level)
     response += "Fecha: {}".format(updated_time.strftime('%H:%M %d/%m/%Y'))
 
     bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
@@ -102,4 +134,7 @@ def other_message(message):
 #     bot.reply_to(message, message.text)
 
 
-bot.polling()
+if __name__ == "__main__":
+    load_cheaters(CHEATERS_FILE)
+    print CHEATERS
+    bot.polling()
