@@ -3,8 +3,6 @@ from datetime import datetime
 
 from pgoapi import pgoapi
 
-from config import SERVICE_PROVIDER, USERNAME, PASSWORD
-
 
 def setup_logging():
     # log settings
@@ -20,13 +18,15 @@ def setup_logging():
     logging.getLogger("peewee").setLevel(logging.INFO)
 
 
-def setup_api(position):
+def setup_api(position, auth_service, username, password):
     api = pgoapi.PGoApi()
-
     api.set_position(*position)
 
-    if not api.login(SERVICE_PROVIDER, USERNAME, PASSWORD):
-        return None
+    api.set_authentication(provider=auth_service, username=username, password=password)
+
+    # api.activate_signature("encrypt64bit.dll")
+    api.activate_signature("libencrypt-linux-x86-64.so")
+
     return api
 
 

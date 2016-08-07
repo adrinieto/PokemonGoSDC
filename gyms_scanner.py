@@ -10,7 +10,7 @@ from peewee import InsertQuery
 from pgoapi.exceptions import ServerSideRequestThrottlingException
 
 import models
-from config import SCAN_DELAY, GYM_SCAN_DELAY
+from config import SCAN_DELAY, GYM_SCAN_DELAY, SERVICE_PROVIDER, USERNAME, PASSWORD
 from models import create_tables
 from utils import setup_logging, setup_api
 
@@ -50,13 +50,13 @@ def get_data_from_server(gyms):
     setup_logging()
     position = (42.878529, -8.544476, 0)  # Catedral
     try:
-        api = setup_api(position)
+        api = setup_api(position, SERVICE_PROVIDER, USERNAME, PASSWORD)
     except TypeError, e:
-        log.error("Error setting up api: " + e)
-        raise LoginFailedException
+        log.error("Error setting up api: " + str(e))
+        raise LoginFailedException("Error setting up api")
 
     if api is None:
-        raise LoginFailedException
+        raise LoginFailedException("Error setting up api")
     gym_details = []
 
     for gym in gyms:
@@ -67,8 +67,8 @@ def get_data_from_server(gyms):
         api.set_position(gym_lat, gym_lng, 0)
         try:
             response_dict = api.get_gym_details(gym_id=gym_id)
-        except TypeError, e:
-            log.error("Error getting data from server: ", e)
+        except (TypeError, IndexError) as e:
+            log.error("Error getting data from server: " + str(e))
             continue
         if response_dict is None or 'responses' not in response_dict or 'GET_GYM_DETAILS' not in response_dict["responses"]:
             log.warn("No GET_GYM_DETAILS in response. Skipping cell...")
@@ -221,7 +221,7 @@ def main():
             # print top_trainers()
             print top_gyms_owned()
         except (LoginFailedException, ServerSideRequestThrottlingException) as e:
-            log.error("Login failed: " + e)
+            log.error("Login failed: " + str(e))
         log.debug("Sleeping...")
         sleep(SCAN_DELAY)
 
