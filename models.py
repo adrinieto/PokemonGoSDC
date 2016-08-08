@@ -298,15 +298,15 @@ def check_gym_changes(gym, new_gym_dict, new_gym_members):
         # print "New members:"
         # pprint(new_gym_members)
 
-    if not actions:
-        actions.append({
-            'timestamp': now,
-            'gym': gym.id,
-            'action': GymLog.UNKNOWN,
-            'trainer': None,
-            'points_change': None,
-            'gym_points': None,
-            'old_team_id': None,
-            'team_id': None
-        })
+    # if not actions:
+    #     actions.append({
+    #         'timestamp': now,
+    #         'gym': gym.id,
+    #         'action': GymLog.UNKNOWN,
+    #         'trainer': None,
+    #         'points_change': None,
+    #         'gym_points': None,
+    #         'old_team_id': None,
+    #         'team_id': None
+    #     })
     return actions
