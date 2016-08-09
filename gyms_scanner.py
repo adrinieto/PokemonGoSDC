@@ -7,11 +7,11 @@ from datetime import datetime
 from time import sleep
 
 from peewee import InsertQuery
-from pgoapi.exceptions import ServerSideRequestThrottlingException
+from pgoapi.exceptions import ServerSideRequestThrottlingException, AuthException
 
 import models
-from config import SCAN_DELAY, GYM_SCAN_DELAY, SERVICE_PROVIDER, USERNAME, PASSWORD
-from models import create_tables
+from config import GYM_SCAN_DELAY, SERVICE_PROVIDER, USERNAME, PASSWORD
+from models import create_tables, Gym
 from utils import setup_logging, setup_api
 
 log = logging.getLogger(__name__)
@@ -32,7 +32,11 @@ def read_gyms_from_csv(csv_file):
             gym = {}
             for idx, field in enumerate(row):
                 gym[header[idx]] = field
-            gyms.append(gym)
+            gyms.append((
+                gym['gym_id'],
+                float(gym['latitude']),
+                float(gym['longitude'])
+            ))
     return gyms
 
 
@@ -46,7 +50,7 @@ def read_data_from_json(path):
         return json.load(data_file)
 
 
-def get_data_from_server(gyms):
+def get_data_from_server(gyms_coords):
     setup_logging()
     position = (42.878529, -8.544476, 0)  # Catedral
     try:
@@ -59,18 +63,15 @@ def get_data_from_server(gyms):
         raise LoginFailedException("Error setting up api")
     gym_details = []
 
-    for gym in gyms:
-        gym_lat = float(gym['latitude'])
-        gym_lng = float(gym['longitude'])
-        gym_id = gym['gym_id']
-
+    for gym_id, gym_lat, gym_lng in gyms_coords:
         api.set_position(gym_lat, gym_lng, 0)
         try:
             response_dict = api.get_gym_details(gym_id=gym_id)
         except (TypeError, IndexError) as e:
             log.error("Error getting data from server: " + str(e))
             continue
-        if response_dict is None or 'responses' not in response_dict or 'GET_GYM_DETAILS' not in response_dict["responses"]:
+        if response_dict is None or 'responses' not in response_dict or 'GET_GYM_DETAILS' not in response_dict[
+            "responses"]:
             log.warn("No GET_GYM_DETAILS in response. Skipping cell...")
             continue
         gym_detail = response_dict["responses"]["GET_GYM_DETAILS"]
@@ -93,9 +94,16 @@ def parse_and_insert_to_database(gym_details):
         if 'gym_state' not in gym_detail:  # Sometimes the request fail and no data is returned. status code = 2
             log.error("Error requesting gym details. Response: {}".format(gym_detail))
             continue
-
         gym_data = gym_detail['gym_state']['fort_data']
         gym_id = gym_data['id']
+        last_modified = datetime.utcfromtimestamp(gym_data['last_modified_timestamp_ms'] / 1000.0)  # todo Warning UTC
+
+        # Check if gymm modified
+        gym = Gym.get(Gym.id == gym_id)
+        if gym.last_modified == last_modified:
+            continue
+
+
         team_id = gym_data.get('owned_by_team', models.Gym.UNCONTESTED)
         gyms[gym_id] = {
             'id': gym_id,
@@ -108,9 +116,9 @@ def parse_and_insert_to_database(gym_details):
             'enabled': gym_data['enabled'],
             'latitude': gym_data['latitude'],
             'longitude': gym_data['longitude'],
-            'last_modified': datetime.utcfromtimestamp( # todo Warning UTC
-                gym_data['last_modified_timestamp_ms'] / 1000.0),
+            'last_modified': last_modified,
             'last_checked': now,
+            'last_updated': datetime.utcnow()
         }
 
         memberships = gym_detail['gym_state'].get('memberships', [])
@@ -148,9 +156,11 @@ def parse_and_insert_to_database(gym_details):
 
     models.update_gyms(gyms, gym_members)
 
-    InsertQuery(models.Trainer, rows=trainers.values()).upsert().execute()
+    if trainers:
+        InsertQuery(models.Trainer, rows=trainers.values()).upsert().execute()
     log.info("Upserted {} trainers".format(len(trainers)))
-    InsertQuery(models.Pokemon, rows=pokemons.values()).upsert().execute()
+    if pokemons:
+        InsertQuery(models.Pokemon, rows=pokemons.values()).upsert().execute()
     log.info("Upserted {} pokemons".format(len(pokemons)))
 
 
@@ -160,7 +170,7 @@ def gyms_by_team():
     total_gyms = sum(team_counter.values())
     response = ""
     response += "Gimnasios por equipos\n"
-    response += "-" * 30 +"\n"
+    response += "-" * 30 + "\n"
     response += "Número de gimnasios: {}\n".format(models.Gym.select().count())
     teams = team_counter.items()
     teams = sorted(teams, key=lambda x: x[1], reverse=True)
@@ -206,24 +216,29 @@ def gyms_details():
 
 
 def main():
+    gyms = read_gyms_from_csv('gyms_santiago.csv')
     while True:
         try:
-            gyms_dict = read_gyms_from_csv('gyms_santiago.csv')
-            gym_details = get_data_from_server(gyms_dict)
+            # gym_details = read_data_from_json('gym_details.json')
+
+            gym_details = []
+            for gym in gyms:
+                try:
+                    gym_details = get_data_from_server([gym])
+                    parse_and_insert_to_database(gym_details)
+                except AuthException, e:
+                    log.error(str(e))
+                    sleep(5)
+
             save_to_json(gym_details)
 
-            gym_details = read_data_from_json('gym_details.json')
-
-            parse_and_insert_to_database(gym_details)
-
-            print gyms_details()
+            # print gyms_details()
             print gyms_by_team()
             # print top_trainers()
             print top_gyms_owned()
         except (LoginFailedException, ServerSideRequestThrottlingException) as e:
             log.error("Login failed: " + str(e))
         log.debug("Sleeping...")
-        sleep(SCAN_DELAY)
 
 
 if __name__ == '__main__':

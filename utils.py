@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pgoapi import pgoapi
 
+from config import ENCRYPT_LIB_PATH
+
 
 def setup_logging():
     # log settings
@@ -24,8 +26,7 @@ def setup_api(position, auth_service, username, password):
 
     api.set_authentication(provider=auth_service, username=username, password=password)
 
-    # api.activate_signature("encrypt64bit.dll")
-    api.activate_signature("libencrypt-linux-x86-64.so")
+    api.activate_signature(ENCRYPT_LIB_PATH)
 
     return api
 

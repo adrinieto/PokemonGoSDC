@@ -1,6 +1,7 @@
 # coding: utf-8
 import logging
-from datetime import datetime
+import os
+from datetime import datetime, timedelta
 
 from peewee import Model, SqliteDatabase, CharField, IntegerField, BooleanField, DoubleField, DateTimeField, \
     ForeignKeyField, fn, DeleteQuery, InsertQuery, DoesNotExist
@@ -18,7 +19,7 @@ def init_database():
     if db is not None:
         return db
 
-    db = SqliteDatabase(DATABASE)
+    db = SqliteDatabase(os.path.join(os.path.dirname(__file__), DATABASE))
     log.info('Connecting to local SQLite database.')
 
     return db
@@ -91,6 +92,7 @@ class Gym(BaseModel):
     longitude = DoubleField()
     last_modified = DateTimeField()
     last_checked = DateTimeField()
+    last_updated = DateTimeField()
 
     @property
     def team(self):
@@ -103,6 +105,22 @@ class Gym(BaseModel):
         while self.gym_points >= points_per_level[level - 1]:
             level += 1
         return level
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "team_id": self.team_id,
+            "gym_points": self.gym_points,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "last_modified": self.last_modified,
+            "last_checked": self.last_checked - timedelta(hours=+2),
+            "last_updated": self.last_updated,
+            "level": self.level,
+            "members_count": len(self.members),
+        }
 
     def __repr__(self):
         return "Gym(id={}, name={}, team_id={}, gym_points={}, last_modified={}, members_count={}))".format(
@@ -154,10 +172,10 @@ def update_gyms(gyms, gym_members_dict):
     for gym_id in gyms:
         try:
             gym = Gym.get(Gym.id == gym_id)
-            # if gym.last_modified != gyms[gym_id]['last_modified']:
-            gym_actions = check_gym_changes(gym, gyms[gym_id], gym_members_dict[gym_id])
-            actions.extend(gym_actions)
-            gym_members_to_update.append(gym_id)
+            if gym.last_modified != gyms[gym_id]['last_modified']:
+                gym_actions = check_gym_changes(gym, gyms[gym_id], gym_members_dict[gym_id])
+                actions.extend(gym_actions)
+                gym_members_to_update.append(gym_id)
         except DoesNotExist:
             log.debug("Adding new gym: {}".format(gyms[gym_id]['name']))
             gym_members_to_update.append(gym_id)
