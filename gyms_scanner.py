@@ -78,6 +78,7 @@ def get_data_from_server(gyms_coords):
         gym_details.append(gym_detail)
 
         sleep(GYM_SCAN_DELAY)
+    log.info("New info for {} gyms".format(len(gym_details)))
     return gym_details
 
 
