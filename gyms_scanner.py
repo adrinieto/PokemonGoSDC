@@ -7,7 +7,7 @@ from datetime import datetime
 from time import sleep
 
 from peewee import InsertQuery
-from pgoapi.exceptions import ServerSideRequestThrottlingException, AuthException
+from pgoapi.exceptions import ServerSideRequestThrottlingException, AuthException, NotLoggedInException
 
 import models
 from config import GYM_SCAN_DELAY, SERVICE_PROVIDER, USERNAME, PASSWORD
@@ -67,7 +67,7 @@ def get_data_from_server(gyms_coords):
         api.set_position(gym_lat, gym_lng, 0)
         try:
             response_dict = api.get_gym_details(gym_id=gym_id)
-        except (TypeError, IndexError) as e:
+        except (TypeError, IndexError, NotLoggedInException) as e:
             log.error("Error getting data from server: " + str(e))
             continue
         if response_dict is None or 'responses' not in response_dict or 'GET_GYM_DETAILS' not in response_dict[
