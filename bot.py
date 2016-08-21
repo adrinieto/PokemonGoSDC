@@ -137,4 +137,7 @@ def other_message(message):
 if __name__ == "__main__":
     load_cheaters(CHEATERS_FILE)
     print CHEATERS
-    bot.polling()
+    try:
+        bot.polling(none_stop=True)
+    except Exception as ex:
+        log.error(ex)
