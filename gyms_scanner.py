@@ -7,7 +7,7 @@ from datetime import datetime
 from time import sleep
 
 from peewee import InsertQuery
-from pgoapi.exceptions import ServerSideRequestThrottlingException, AuthException, NotLoggedInException
+from pgoapi.exceptions import ServerSideRequestThrottlingException, AuthException
 
 import models
 from config import GYM_SCAN_DELAY, SERVICE_PROVIDER, USERNAME, PASSWORD
@@ -55,7 +55,7 @@ def get_data_from_server(gyms_coords):
     position = (42.878529, -8.544476, 0)  # Catedral
     try:
         api = setup_api(position, SERVICE_PROVIDER, USERNAME, PASSWORD)
-    except TypeError, e:
+    except Exception as e:
         log.error("Error setting up api: " + str(e))
         raise LoginFailedException("Error setting up api")
 
@@ -67,7 +67,7 @@ def get_data_from_server(gyms_coords):
         api.set_position(gym_lat, gym_lng, 0)
         try:
             response_dict = api.get_gym_details(gym_id=gym_id)
-        except (TypeError, IndexError, NotLoggedInException) as e:
+        except Exception as e:
             log.error("Error getting data from server: " + str(e))
             continue
         if response_dict is None or 'responses' not in response_dict or 'GET_GYM_DETAILS' not in response_dict[
