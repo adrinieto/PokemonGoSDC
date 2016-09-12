@@ -1,2 +1,4 @@
 git+https://github.com/tejado/pgoapi.git@441925eb7b346ed60ebf8eb537b0dad682a2fff0#egg=pgoapi
 pyTelegramBotAPI==2.1.5
+peewee==2.8.1
+
