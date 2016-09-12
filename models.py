@@ -71,7 +71,7 @@ class Pokemon(BaseModel):
     last_checked = DateTimeField()
 
     def __repr__(self):
-        return "Pokemon(id={}, owner={}))".format(self.id, self.owner)
+        return "Pokemon(id={}, pokemon_id={}, cp={}, owner={}))".format(self.id, self.pokemon_id, self.cp, self.owner)
 
 
 class Gym(BaseModel):

@@ -4,13 +4,33 @@ from collections import Counter
 from datetime import datetime, timedelta
 
 import telebot
+from peewee import DoesNotExist
 
 import models
 from config import BOT_API_TOKEN
+from models import Trainer
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
 logging.getLogger(__name__).setLevel(logging.DEBUG)
+
+POKEMON = ["Missingno", "Bulbasaur", "Ivysaur", "Venusaur", "Charmander", "Charmeleon", "Charizard", "Squirtle",
+           "Wartortle", "Blastoise", "Caterpie", "Metapod", "Butterfree", "Weedle", "Kakuna", "Beedrill", "Pidgey",
+           "Pidgeotto", "Pidgeot", "Rattata", "Raticate", "Spearow", "Fearow", "Ekans", "Arbok", "Pikachu", "Raichu",
+           "Sandshrew", "Sandslash", "Nidoran", "Nidorina", "Nidoqueen", "Nidoran", "Nidorino", "Nidoking", "Clefairy",
+           "Clefable", "Vulpix", "Ninetales", "Jigglypuff", "Wigglytuff", "Zubat", "Golbat", "Oddish", "Gloom",
+           "Vileplume", "Paras", "Parasect", "Venonat", "Venomoth", "Diglett", "Dugtrio", "Meowth", "Persian",
+           "Psyduck", "Golduck", "Mankey", "Primeape", "Growlithe", "Arcanine", "Poliwag", "Poliwhirl", "Poliwrath",
+           "Abra", "Kadabra", "Alakazam", "Machop", "Machoke", "Machamp", "Bellsprout", "Weepinbell", "Victreebel",
+           "Tentacool", "Tentacruel", "Geodude", "Graveler", "Golem", "Ponyta", "Rapidash", "Slowpoke", "Slowbro",
+           "Magnemite", "Magneton", "Farfetch'd", "Doduo", "Dodrio", "Seel", "Dewgong", "Grimer", "Muk", "Shellder",
+           "Cloyster", "Gastly", "Haunter", "Gengar", "Onix", "Drowzee", "Hypno", "Krabby", "Kingler", "Voltorb",
+           "Electrode", "Exeggcute", "Exeggutor", "Cubone", "Marowak", "Hitmonlee", "Hitmonchan", "Lickitung",
+           "Koffing", "Weezing", "Rhyhorn", "Rhydon", "Chansey", "Tangela", "Kangaskhan", "Horsea", "Seadra", "Goldeen",
+           "Seaking", "Staryu", "Starmie", "Mr. Mime", "Scyther", "Jynx", "Electabuzz", "Magmar", "Pinsir", "Tauros",
+           "Magikarp", "Gyarados", "Lapras", "Ditto", "Eevee", "Vaporeon", "Jolteon", "Flareon", "Porygon", "Omanyte",
+           "Omastar", "Kabuto", "Kabutops", "Aerodactyl", "Snorlax", "Articuno", "Zapdos", "Moltres", "Dratini",
+           "Dragonair", "Dragonite", "Mewtwo", "Mew"]
 
 GRAY_CIRCLE = u'\u26aa\ufe0f'
 BLUE_HEART = u'\U0001f499'
@@ -63,7 +83,7 @@ def gyms_by_team(message):
     for team_id, gyms_owned in teams:
         team_emoji = TEAM_EMOJI[team_id].encode('utf-8')
         response += "{}{:8} {:5}  ({:.1f}%)\n".format(team_emoji, models.TEAMS[team_id], gyms_owned,
-                                                       gyms_owned / float(total_gyms) * 100)
+                                                      gyms_owned / float(total_gyms) * 100)
     response += "Fecha: {}".format(updated_time.strftime('%H:%M %d/%m/%Y'))
 
     bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
@@ -131,6 +151,36 @@ def gyms_per_trainer(message):
     bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
 
 
+@bot.message_handler(commands=['entrenador'])
+def entrenador(message):
+    log.debug(message.text + str(message.chat.__dict__))
+    try:
+        trainer_name = message.text.split()[1]
+    except IndexError:
+        bot.reply_to(message, "Indica el nombre del entrenador: /entrenador NOMBRE")
+        return
+    try:
+        trainer = Trainer.get(Trainer.name == trainer_name)
+    except DoesNotExist:
+        bot.reply_to(message, "No hay datos para ese entrenador")
+        return
+
+    team_emoji = TEAM_EMOJI[trainer.team_id].encode('utf-8')
+    response = "{} {} (level {})\n".format(trainer.name, team_emoji, trainer.level)
+    response += "-" * 25 + "\n"
+    gyms = trainer.gyms_membership
+
+    for gym in gyms:
+        pokemon = gym.pokemon
+        gym_name = gym.gym.name.encode('utf-8')
+        response += "{:10} {:4}CP - {}\n".format(POKEMON[pokemon.pokemon_id], pokemon.cp, gym_name)
+
+    if not gyms:
+        response += "No controla ningún gimnasio"
+
+    bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
+
+
 @bot.message_handler(commands=['about'])
 def about(message):
     response = "Los datos utilizados por el Bot son extraídos de los gimnasios de Santiago y alrededores, " \
@@ -142,13 +192,6 @@ def about(message):
 @bot.message_handler(func=lambda message: True)
 def other_message(message):
     log.debug("Incorrect command: " + message.text + " " + str(message.chat.__dict__))
-
-# # Handle all other messages with content_type 'text' (content_types defaults to ['text'])
-# @bot.message_handler(func=lambda message: True)
-# def echo_message(message):
-#     print message
-#     bot.reply_to(message, message.text)
-
 
 if __name__ == "__main__":
     load_cheaters(CHEATERS_FILE)

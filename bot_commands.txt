@@ -1,3 +1,4 @@
+entrenador - Gimnasios controlados por el entrenador
 equipos - Estado de los gimnasios por equipos
 top_entrenadores - Top 15 de entrenadores por nivel de los últimos 15 días
 top_gimnasios - Top 10 de gimnasios controlados por entrenador de los últimos 15 días
