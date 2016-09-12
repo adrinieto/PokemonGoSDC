@@ -202,7 +202,7 @@ def check_gym_changes(gym, new_gym_dict, new_gym_members):
     points_change = new_gym_points - gym.gym_points
 
     print "-"*30
-    print gym.name
+    print gym.name.encode('utf-8')
     print "Last modified:", gym.last_modified, new_last_modified
     print "Team: ", gym.team_id, new_team_id
     print "Is in battle:", gym.is_in_battle, new_is_in_battle
