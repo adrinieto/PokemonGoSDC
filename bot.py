@@ -123,6 +123,14 @@ def gyms_per_trainer(message):
     bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
 
 
+@bot.message_handler(commands=['about'])
+def about(message):
+    response = "Los datos utilizados por el Bot son extraídos de los gimnasios de Santiago y alrededores, " \
+               "incluyendo Milladoiro y Los Tilos.\n" \
+               "Si quieres contactar con el creador mándame un mensaje a @Nieto."
+    bot.reply_to(message, response)
+
+
 @bot.message_handler(func=lambda message: True)
 def other_message(message):
     log.debug("Incorrect command: " + message.text + " " + str(message.chat.__dict__))

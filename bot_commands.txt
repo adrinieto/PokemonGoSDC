@@ -2,3 +2,4 @@ equipos - Estado de los gimnasios por equipos
 top_entrenadores - Top 10 de entrenadores por nivel
 top_gimnasios - Top 10 de gimnasios controlados por entrenador
 lista_chetos - Lista de chetos por nivel
+about - Información sobre el bot
