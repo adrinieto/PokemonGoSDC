@@ -1,6 +1,7 @@
 # coding: utf-8
 import logging
 from collections import Counter
+from datetime import datetime, timedelta
 
 import telebot
 
@@ -73,9 +74,11 @@ def top_trainers(message):
     log.debug("/top_entrenadores " + str(message.chat.__dict__))
     updated_time = list(models.Trainer.select().order_by(models.Trainer.last_checked.desc()).limit(1))[0].last_checked
     top_trainers = models.Trainer.sorted_by_level()
-    top_trainers_withouth_cheaters = [trainer for trainer in top_trainers if trainer.name not in CHEATERS]
+    top_trainers_withouth_cheaters = [trainer for trainer in top_trainers if trainer.name not in CHEATERS
+                                      if trainer.last_checked > datetime.now() + timedelta(days=-15)]
+
     response = ""
-    response += "TOP 15 entrenadores (por nivel)\n"
+    response += "TOP 15 entrenadores de los últimos 15 días\n"
     response += "-" * 25 + "\n"
     response += "{:5} {:15}\n".format("NIVEL", "ENTRENADOR")
     for trainer in top_trainers_withouth_cheaters[:15]:
@@ -86,19 +89,24 @@ def top_trainers(message):
     bot.reply_to(message, prepare_text(response), parse_mode="Markdown")
 
 
-@bot.message_handler(commands=['lista_chetos'])
+@bot.message_handler(commands=['lista_chetos', 'top_chetos'])
 def top_trainers(message):
     log.debug("/lista_chetos " + str(message.chat.__dict__))
     updated_time = list(models.Trainer.select().order_by(models.Trainer.last_checked.desc()).limit(1))[0].last_checked
     top_trainers = models.Trainer.sorted_by_level()
-    top_cheaters = [trainer for trainer in top_trainers if trainer.name in CHEATERS]
+    top_cheaters = [trainer for trainer in top_trainers if trainer.name in CHEATERS
+                    if trainer.last_checked > datetime.now() + timedelta(days=-15)]
+
     response = ""
-    response += "TOP 10 chetos (por nivel)\n"
+    response += "TOP 10 chetos de los últimos 15 días\n"
     response += "-" * 25 + "\n"
-    response += "{:5} {:15}\n".format("NIVEL", "ENTRENADOR")
-    for trainer in top_cheaters[:10]:
-        team_emoji = TEAM_EMOJI[trainer.team_id].encode('utf-8')
-        response += "{:^5} {}{:16} \n".format(trainer.level, team_emoji, trainer.name)
+    if len(top_cheaters) > 0:
+        response += "{:5} {:15}\n".format("NIVEL", "ENTRENADOR")
+        for trainer in top_cheaters[:10]:
+            team_emoji = TEAM_EMOJI[trainer.team_id].encode('utf-8')
+            response += "{:^5} {}{:16} \n".format(trainer.level, team_emoji, trainer.name)
+    else:
+        response += "No hay chetos registrados en los últimos días :)\n"
     response += "Fecha: {}".format(updated_time.strftime('%H:%M %d/%m/%Y'))
 
     bot.reply_to(message, prepare_text(response), parse_mode="Markdown")

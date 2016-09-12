@@ -1,5 +1,5 @@
 equipos - Estado de los gimnasios por equipos
-top_entrenadores - Top 10 de entrenadores por nivel
-top_gimnasios - Top 10 de gimnasios controlados por entrenador
-lista_chetos - Lista de chetos por nivel
+top_entrenadores - Top 15 de entrenadores por nivel de los últimos 15 días
+top_gimnasios - Top 10 de gimnasios controlados por entrenador de los últimos 15 días
+top_chetos - Top de chetos por nivel de los últimos 15 días
 about - Información sobre el bot
