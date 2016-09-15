@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="static/css/app.css"/>
+    <link rel="stylesheet" type="text/css" href="static/css/app.css"/>
+    <title>Pokemon Go SDC Gyms</title>
+    <meta charset="utf-8"/>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://npmcdn.com/leaflet@1.0.0-rc.2/dist/leaflet.css"/>
+    <link rel="stylesheet" href="static/css/app.css"/>
+
+
+</head>
+<body>
+
+<div id="map_wrapper">
+    <div id="map"></div>
+</div>
+
+<div id="panel">
+    <ul id="team_stats">
+        <li>
+            <div>
+                <img class="team_image" src="static/teams/mystic.png">
+            </div>
+            <div class="stat highlight t1">
+                <h2>Mystic</h2>
+                <span id="mystic_count"></span>
+            </div>
+        </li>
+        <li>
+            <div>
+                <img class="team_image" src="static/teams/valor.png">
+            </div>
+            <div class="stat highlight t2">
+                <h2>Valor</h2>
+                <span id="valor_count"></span>
+            </div>
+        </li>
+        <li>
+            <div>
+                <img class="team_image" src="static/teams/instinct.png">
+            </div>
+            <div class="stat highlight t3">
+                <h2>Instinct</h2>
+                <span id="instinct_count"></span>
+            </div>
+        </li>
+    </ul>
+
+    <h3>Historial <span id="updated_text">actualizado a las <span id="updated_at"></span></span>
+    </h3>
+    <ul id="changes">
+
+    </ul>
+</div>
+
+<script src="https://npmcdn.com/leaflet@1.0.0-rc.2/dist/leaflet.js"></script>
+<script src="http://code.jquery.com/jquery-1.12.3.min.js"
+        integrity="sha256-aaODHAgvwQW1bFOGXMeX+pC4PZIPsvn2h1sArYOhgXQ=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>
+
+<script src="static/js/map.js"></script>
+</body>
+</html>

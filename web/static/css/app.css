@@ -1,0 +1,90 @@
+body {
+    font-size: 12pt;
+    padding: 0;
+    margin: 0;
+}
+
+html, body, #map, #map_wrapper {
+    height: 100%;
+    width: 100%;
+}
+
+.leaflet-popup-content{
+    width: 150px;
+}
+
+#panel {
+    position: absolute;
+    width: 300px;
+    height: 80%;
+    background: #0c0c0c;
+    float: left;
+    z-index: 500;
+    top: 1rem;
+    right: 1rem;
+    opacity: 0.8;
+    border-radius: 10px;
+    padding: 1rem;
+    color: #ededed;
+    overflow: hidden;
+}
+
+.popup {
+    position: absolute;
+    z-index: 450;
+    color: #1F1F1F;
+    font-weight: 800;
+    font-size: 16pt;
+}
+
+.out {
+    opacity: 0;
+}
+
+.in {
+    opacity: 1;
+}
+
+.fade {
+}
+
+.highlight {
+    font-weight: bold;
+}
+
+.t1 {
+    /*color: #2d8cef;*/
+    color: #0176f0;
+}
+
+.t2 {
+    /*color: #f33c33;*/
+    color: #f32318;
+}
+
+.t3 {
+    color: #f9d72d;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+#team_stats li {
+    display: -moz-box;
+}
+
+.team_image {
+    width: 100px;
+    height: 100px;
+}
+
+.stat {
+    padding-left: 30px;
+}
+
+#updated_text {
+    font-size: 10pt;
+    font-weight: normal;
+}
