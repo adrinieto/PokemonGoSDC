@@ -1,6 +1,15 @@
 PokemonGoSDC
 ============
 
+Ya no funciona. Proyecto abandonado.
+
+---
+
+PokemonGOSDC consistía en un bot para Telegram al que le podías consultar datos relativos a Santiago de Compostelalos: gimnasios,
+que gimnasios controlaban los entrenadores y qué pokemon tenían en él.
+
+También había una web en pruebas en la que podías ver el estado de los gimnasios en un mapa con notificaciones de los cambios en tiempo real. 
+
 # Instalación
 
 1. Instala las dependencias con `pip install -r requirements.txt`
